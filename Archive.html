@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dead'Kind — Signal Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --card-bg: #0e0e0e;
+  --accent: #c45486;
+  --accent-dim: rgba(196,84,134,0.10);
+  --accent-glow: rgba(196,84,134,0.22);
+  --green: #39e75f;
+  --yellow: #e8e83a;
+  --text: #ffffff;
+  --text-dim: #888;
+  --text-muted: #444;
+  --border: #1c1c1c;
+  --border-mid: #2a2a2a;
+  --mono: 'Share Tech Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body: 'Rajdhani', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:13px;min-height:100vh;overflow-x:hidden;}
+button,select{cursor:pointer;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+
+/* SCANLINE */
+.scanline{position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999;}
+
+/* ── NAV ── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:#080808;border-bottom:1px solid var(--border);
+  height:56px;display:flex;align-items:center;padding:0 14px;
+  gap:0;
+}
+.nav-left{display:flex;align-items:center;gap:0;flex:1;}
+.logo-skull{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 0 4px rgba(196,84,134,0.7));}
+.nav-meta{display:flex;flex-direction:column;margin-left:8px;}
+.nav-status-row{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:8px;color:var(--accent);letter-spacing:0.06em;animation:statusBlink 2s infinite;}
+.status-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulsePink 2s infinite;flex-shrink:0;}
+@keyframes pulsePink{0%,100%{box-shadow:0 0 0 0 rgba(196,84,134,0.5);}50%{box-shadow:0 0 0 4px rgba(196,84,134,0);}}
+@keyframes statusBlink{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.nav-meta-line{font-family:var(--mono);font-size:7.5px;color:var(--text-dim);letter-spacing:0.06em;line-height:1.6;}
+
+.nav-center{display:flex;align-items:center;justify-content:center;}
+.nav-center img{height:80px;object-fit:contain;filter:drop-shadow(0 0 5px rgba(232,24,122,0.4));}
+
+.nav-right{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;}
+.nav-cart-btn{font-family:var(--mono);font-size:10px;color:var(--accent);background:none;border:none;letter-spacing:0.06em;display:flex;align-items:center;gap:6px;}
+.nav-cart-btn svg{width:14px;height:14px;stroke:var(--accent);fill:none;stroke-width:1.5;}
+
+/* Hamburger for mobile nav */
+.nav-menu-btn{width:32px;height:32px;background:none;border:1px solid var(--border-mid);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:2px;}
+.nav-menu-btn span{width:14px;height:1px;background:var(--text-dim);}
+
+/* Mobile nav drawer */
+.nav-drawer{
+  position:fixed;top:56px;left:0;right:0;background:#080808;
+  border-bottom:1px solid var(--border);
+  z-index:99;
+  transform:translateY(-100%);
+  opacity:0;
+  transition:transform 0.3s ease, opacity 0.3s ease;
+  pointer-events:none;
+}
+.nav-drawer.open{transform:translateY(0);opacity:1;pointer-events:all;}
+.nav-drawer ul{list-style:none;padding:12px 0;}
+.nav-drawer ul li a{
+  display:block;padding:12px 20px;
+  font-family:var(--mono);font-size:12px;color:var(--text-dim);
+  text-decoration:none;letter-spacing:0.12em;
+  border-bottom:1px solid var(--border);
+  transition:color 0.2s;
+}
+.nav-drawer ul li a:hover{color:var(--text);}
+.nav-drawer ul li a.active{color:var(--accent);}
+.nav-drawer ul li:last-child a{border-bottom:none;}
+
+/* nav-bracket (desktop only) */
+.nav-bracket{position:absolute;width:10px;height:10px;border-color:rgba(196,84,134,0.5);border-style:solid;}
+.nb-tl{top:4px;left:4px;border-width:1px 0 0 1px;}
+.nb-tr{top:4px;right:4px;border-width:1px 1px 0 0;}
+.nb-bl{bottom:4px;left:4px;border-width:0 0 1px 1px;}
+.nb-br{bottom:4px;right:4px;border-width:0 1px 1px 0;}
+
+/* ── OUTER LAYOUT ── */
+.outer{display:flex;min-height:calc(100vh - 56px - 30px);}
+
+/* ── LEFT ICON SIDEBAR — Desktop only ── */
+.icon-sidebar{
+  width:58px;min-width:58px;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0;gap:6px;
+  position:sticky;top:56px;height:calc(100vh - 56px);
+}
+.icon-btn{
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border:1px solid transparent;background:none;color:var(--text-muted);
+  cursor:pointer;transition:all 0.18s;border-radius:2px;
+}
+.icon-btn:hover,.icon-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.5;}
+.scroll-label-wrap{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.scroll-label{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-family:var(--mono);font-size:8px;color:var(--text-muted);letter-spacing:0.12em;}
+.scroll-arrow{width:1px;height:24px;background:linear-gradient(to bottom,transparent,var(--text-muted));}
+.nav-links{display:flex;gap:28px;list-style:none;margin-right:24px;}
+.nav-links a{font-family:var(--mono);font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:0.1em;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-links a.active{color:var(--accent);border-bottom:1px solid var(--accent);padding-bottom:1px;}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;padding:18px 20px 30px;overflow-y:auto;}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:18px;}
+.page-title{font-family:var(--display);font-size:38px;letter-spacing:0.03em;line-height:1;margin-bottom:8px;}
+.page-title span{color:var(--accent);}
+.page-sub{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.05em;line-height:1.8;}
+
+/* ── ARCHIVE CARD — Desktop: 4-column grid ── */
+.archive-card{
+  border:1px solid var(--border-mid);
+  background:var(--card-bg);
+  display:grid;
+  grid-template-columns:200px 280px 200px 1fr;
+  gap:0;
+  margin-bottom:10px;
+  position:relative;
+  transition:border-color 0.2s;
+  overflow:hidden;
+}
+.archive-card:hover{border-color:#3a3a3a;}
+.archive-card.locked{opacity:0.75;}
+
+/* corner brackets */
+.card-corner{position:absolute;width:10px;height:10px;border-color:#333;border-style:solid;}
+.card-corner.tl{top:-1px;left:-1px;border-width:2px 0 0 2px;}
+.card-corner.tr{top:-1px;right:-1px;border-width:2px 2px 0 0;}
+.card-corner.bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px;}
+.card-corner.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
+.archive-card:hover .card-corner{border-color:var(--accent);}
+
+/* IMAGE col */
+.card-img-col{
+  position:relative;background:#0d0d0d;
+  border-right:1px solid var(--border-mid);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;min-height:145px;
+}
+.card-img-col img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.archive-card:hover .card-img-col img{transform:scale(1.04);}
+.card-img-placeholder{width:100%;height:100%;min-height:160px;display:flex;align-items:center;justify-content:center;}
+.card-img-placeholder svg{width:120px;height:120px;}
+
+/* INFO col */
+.card-info-col{padding:16px 18px;border-right:1px solid var(--border-mid);}
+.card-num{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:5px;}
+.card-name{font-family:var(--display);font-size:24px;letter-spacing:0.04em;line-height:1;margin-bottom:4px;}
+.card-collection-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;margin-bottom:12px;}
+.card-desc{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.9;letter-spacing:0.04em;}
+.card-desc p{margin-bottom:1px;}
+
+/* STATS col */
+.card-stats-col{padding:14px 14px;border-right:1px solid var(--border-mid);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-key{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:0.08em;}
+.stat-val{font-family:var(--mono);font-size:9px;color:var(--text);letter-spacing:0.06em;display:flex;align-items:center;gap:5px;}
+.stat-val.completed{color:var(--accent);}
+.stat-val.locked-val{color:var(--text-muted);}
+.stat-lock-icon{width:11px;height:11px;stroke:var(--text-muted);fill:none;stroke-width:1.5;}
+
+/* RIGHT col */
+.card-right-col{
+  padding:12px 8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;
+}
+.card-status-badge{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;}
+.card-status-badge.archived{color:var(--accent);}
+.card-status-badge.locked-badge{color:var(--text-muted);}
+.card-skull-preview{
+  width:110px;height:110px;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.card-skull-preview img{width:220px;height:220px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(196,84,134,0.4));}
+.skull-crosshair{position:absolute;inset:0;pointer-events:none;}
+.skull-crosshair::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(196,84,134,0.4);}
+.skull-crosshair::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(196,84,134,0.4);}
+.view-archive-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  font-family:var(--mono);font-size:10px;color:var(--accent);
+  background:none;border:none;letter-spacing:0.08em;
+  cursor:pointer;transition:opacity 0.2s;padding:0;
+}
+.view-archive-btn:hover{opacity:0.7;}
+.view-archive-btn svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:1.5;}
+.locked-text{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:0.08em;}
+
+/* ── FOOTER ── */
+.footer{
+  height:30px;border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;
+  background:#080808;position:relative;
+}
+.footer-left{font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:0.06em;display:flex;align-items:center;gap:10px;}
+.footer-barcode{display:flex;gap:1.5px;align-items:center;height:14px;opacity:0.4;}
+.footer-barcode span{display:block;height:100%;background:var(--text);}
+.footer-center{position:absolute;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.1em;animation:tagBlink 3s ease-in-out infinite;white-space:nowrap;}
+@keyframes tagBlink{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.footer-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:9px;color:var(--text-muted);letter-spacing:0.06em;}
+
+/* Glitch scanlines */
+@keyframes scanShift{0%{background-position:0 0;}100%{background-position:0 100px;}}
+
+/* ═══════════════════════════════════════
+   MOBILE RESPONSIVE — max-width: 768px
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Hide desktop sidebar */
+  .icon-sidebar{display:none;}
+
+  /* Nav adjustments */
+  .nav{height:52px;padding:0 12px;}
+  .logo-skull{width:40px;height:40px;}
+  .nav-meta-line{display:none;}
+  .nav-status-row .nav-barcode{display:none;}
+  .nav-center img{height:60px;}
+
+  /* Main content full width */
+  .main-content{padding:14px 12px 80px;}
+
+  /* Page header */
+  .page-title{font-size:28px;}
+  .page-sub{font-size:9px;}
+
+  /* Archive card — stack vertically on mobile */
+  .archive-card{
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto auto auto;
+  }
+
+  /* Mobile: Image row */
+  .card-img-col{
+    border-right:none;
+    border-bottom:1px solid var(--border-mid);
+    min-height:180px;
+    max-height:200px;
+  }
+  .card-img-col img{object-fit:cover;width:100%;height:200px;}
+  .card-img-placeholder{min-height:180px;}
+  .card-img-placeholder svg{width:100px;height:100px;}
+
+  /* Mobile: Info row — inline layout */
+  .card-info-col{
+    padding:12px 14px;
+    border-right:none;
+    border-bottom:1px solid var(--border-mid);
+    display:grid;
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto auto;
+    column-gap:10px;
+    align-items:start;
+  }
+  .card-num{
+    grid-column:1;grid-row:1;
+    font-size:9px;margin-bottom:0;
+    align-self:center;
+  }
+  .card-name{
+    grid-column:2;grid-row:1;
+    font-size:22px;margin-bottom:2px;
+  }
+  .card-collection-label{
+    grid-column:2;grid-row:2;
+    margin-bottom:8px;
+  }
+  .card-desc{
+    grid-column:1/-1;grid-row:3;
+    font-size:9.5px;
+  }
+
+  /* Mobile: Stats row — 2-column grid */
+  .card-stats-col{
+    padding:10px 14px;
+    border-right:none;
+    border-bottom:1px solid var(--border-mid);
+  }
+  .stat-row{padding:6px 0;}
+  .stat-key{font-size:8.5px;}
+  .stat-val{font-size:8.5px;}
+
+  /* Mobile: Right col — horizontal strip at bottom */
+  .card-right-col{
+    flex-direction:row;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 14px;
+    gap:8px;
+  }
+  .card-status-badge{font-size:8px;}
+  .card-skull-preview{
+    width:60px;height:60px;flex-shrink:0;
+  }
+  .card-skull-preview img{width:120px;height:120px;}
+  .view-archive-btn{font-size:9px;gap:5px;}
+  .view-archive-btn svg{width:13px;height:13px;}
+
+  /* Footer mobile */
+  .footer{height:auto;padding:6px 12px;flex-wrap:wrap;gap:4px;}
+  .footer-center{position:static;transform:none;font-size:8px;order:3;width:100%;text-align:center;padding-bottom:2px;}
+  .footer-left{font-size:8px;gap:8px;}
+  .footer-right{font-size:8px;gap:10px;}
+  .footer-right span:not(:first-child){display:none;}
+}
+
+/* ═══════════════════════════════════════
+   SMALL MOBILE — max-width: 480px
+   ═══════════════════════════════════════ */
+@media (max-width: 480px) {
+  .nav-meta{display:none;}
+  .nav-center img{height:52px;}
+
+  .page-title{font-size:24px;}
+
+  .card-img-col{max-height:160px;}
+  .card-img-col img{height:160px;}
+
+  .card-name{font-size:20px;}
+
+  .archive-card{margin-bottom:8px;}
+
+  /* Stats: 2 column compact */
+  .card-stats-col{padding:8px 12px;}
+  .stat-key{font-size:8px;letter-spacing:0.05em;}
+  .stat-val{font-size:8px;}
+
+  /* Right strip tighter */
+  .card-right-col{padding:8px 12px;}
+  .card-skull-preview{width:50px;height:50px;}
+  .card-skull-preview img{width:100px;height:100px;}
+  .card-status-badge{font-size:7.5px;}
+}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<!-- ── NAV ── -->
+<nav class="nav" style="position:relative;">
+  <span class="nav-bracket nb-tl"></span>
+  <span class="nav-bracket nb-tr"></span>
+  <span class="nav-bracket nb-bl"></span>
+  <span class="nav-bracket nb-br"></span>
+
+  <div class="nav-left">
+    <a href="#" style="text-decoration:none;">
+      <img src="skull3.png" class="logo-skull" alt="Skull"
+        onerror="this.style.display='none'">
+    </a>
+    <div class="nav-meta">
+      <div class="nav-status-row">
+        <span class="status-dot"></span>SYSTEM ONLINE
+        <span style="color:var(--text-muted);margin:0 6px;">•</span>
+        <span style="color:var(--text-muted);">DK-2050</span>
+        <div class="nav-barcode" id="navBarcode"></div>
+      </div>
+      <div class="nav-meta-line">LOCATION : EARTH (TEMP)</div>
+      <div class="nav-meta-line">STATUS : OUTSIDER</div>
+    </div>
+  </div>
+
+  <div class="nav-center">
+    <img src="name.png" alt="DeadKind"
+      onerror="this.outerHTML='<span style=\'font-family:Bebas Neue,sans-serif;font-size:24px;color:#fff;\'>DeadKind</span>'">
+  </div>
+
+  <div class="nav-right">
+    <!-- Desktop links (hidden on mobile via JS class toggle) -->
+    <ul class="nav-links" id="desktopLinks" style="display:flex;gap:22px;list-style:none;margin-right:16px;">
+      <li><a href="index7.html">SHOP</a></li>
+      <li><a href="collection_page.html">COLLECTIONS</a></li>
+      <li><a href="#" class="active">ARCHIVE</a></li>
+      <li><a href="about_page.html">ABOUT</a></li>
+      <li><a href="contect.html">CONTACT</a></li>
+    </ul>
+    <button class="nav-cart-btn">
+      CART [ 0 ]
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    </button>
+    <!-- Hamburger — mobile only -->
+    <button class="nav-menu-btn" id="menuBtn" style="display:none;" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav drawer -->
+<div class="nav-drawer" id="navDrawer">
+  <ul>
+    <li><a href="index7.html">SHOP</a></li>
+    <li><a href="collection_page.html">COLLECTIONS</a></li>
+    <li><a href="#" class="active">ARCHIVE</a></li>
+    <li><a href="about_page.html">ABOUT</a></li>
+    <li><a href="contect.html">CONTACT</a></li>
+  </ul>
+</div>
+
+<!-- ── OUTER ── -->
+<div class="outer">
+
+  <!-- Left Icon Sidebar (desktop only) -->
+  <aside class="icon-sidebar">
+    <button class="icon-btn active" title="Target">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+    </button>
+    <button class="icon-btn" title="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="icon-btn" title="Square">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
+    </button>
+    <button class="icon-btn" title="Copy">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+    <button class="icon-btn" title="Signal">
+      <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="icon-btn" title="Skull">
+      <svg viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 1 9 9c0 3.5-2 6.5-5 8v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2c-3-1.5-5-4.5-5-8a9 9 0 0 1 9-9z"/><circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="icon-btn" title="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <div class="scroll-label-wrap">
+      <div class="scroll-label">SCROLL TO EXPLORE</div>
+      <div class="scroll-arrow"></div>
+      <button class="icon-btn" title="Alert" style="margin-top:4px;">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">SIGNAL ARCHIVE<span style="color:var(--accent);">_</span></div>
+      <div class="page-sub">
+        <p>Signals that have been transmitted.</p>
+        <p>Civilisations that have been left behind.</p>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 01: REBEL ON MARS ═══ -->
+    <div class="archive-card">
+      <span class="card-corner tl"></span>
+      <span class="card-corner tr"></span>
+      <span class="card-corner bl"></span>
+      <span class="card-corner br"></span>
+
+      <div class="card-img-col">
+        <img src="planet.png" alt="Rebel on Mars"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="card-img-placeholder" style="display:none;background:linear-gradient(135deg,#1a0a0f,#0d0d0d);">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="stroke:#c45486;fill:none;stroke-width:0.8;">
+            <circle cx="60" cy="60" r="50"/>
+            <ellipse cx="60" cy="60" rx="58" ry="16"/>
+            <ellipse cx="60" cy="60" rx="40" ry="11"/>
+            <circle cx="45" cy="44" r="4"/><circle cx="72" cy="52" r="6"/><circle cx="55" cy="70" r="5"/>
+            <path d="M35 55 Q50 45 65 58 Q75 48 88 60"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card-info-col">
+        <div class="card-num">01</div>
+        <div class="card-name">REBEL ON MARS</div>
+        <div class="card-collection-label">FIRST COLLECTION</div>
+        <div class="card-desc">
+          <p>We needed Mars.</p>
+          <p>We built. We fought.</p>
+          <p>We lost. Or maybe, we left.</p>
+        </div>
+      </div>
+
+      <div class="card-stats-col">
+        <div class="stat-row">
+          <span class="stat-key">STATUS</span>
+          <span class="stat-val completed">COMPLETED</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">RELEASE DATE</span>
+          <span class="stat-val">02.11.24</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">PIECES</span>
+          <span class="stat-val">12</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">SIGNAL ID</span>
+          <span class="stat-val">ROM-001</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">TRANSMISSION</span>
+          <span class="stat-val">COMPLETE</span>
+        </div>
+      </div>
+
+      <div class="card-right-col">
+        <div class="card-status-badge archived">ARCHIVED</div>
+        <div class="card-skull-preview">
+          <div class="skull-crosshair"></div>
+          <img src="skull2.png" alt="skull preview"
+            onerror="this.style.display='none';">
+        </div>
+        <button class="view-archive-btn">
+          VIEW ARCHIVE
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 02: CIVILISED CHAOS ═══ -->
+    <div class="archive-card">
+      <span class="card-corner tl"></span>
+      <span class="card-corner tr"></span>
+      <span class="card-corner bl"></span>
+      <span class="card-corner br"></span>
+
+      <div class="card-img-col">
+        <img src="skull2.png" alt="Civilised Chaos"
+          style="filter:drop-shadow(0 0 8px rgba(196,84,134,0.4)) sepia(0.3) saturate(1.8) hue-rotate(285deg);"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="card-img-placeholder" style="display:none;background:linear-gradient(135deg,#1a0a0f,#0d0d0d);">
+          <svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg" style="stroke:#c45486;fill:none;stroke-width:0.8;">
+            <ellipse cx="42" cy="50" rx="26" ry="28"/><ellipse cx="31" cy="48" rx="7" ry="8"/><ellipse cx="53" cy="48" rx="7" ry="8"/>
+            <path d="M28 68 Q42 62 56 68"/><rect x="34" y="68" width="5" height="10" rx="1"/><rect x="45" y="68" width="5" height="10" rx="1"/>
+            <ellipse cx="98" cy="50" rx="26" ry="28"/><ellipse cx="87" cy="48" rx="7" ry="8"/><ellipse cx="109" cy="48" rx="7" ry="8"/>
+            <path d="M84 68 Q98 62 112 68"/><rect x="90" y="68" width="5" height="10" rx="1"/><rect x="101" y="68" width="5" height="10" rx="1"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card-info-col">
+        <div class="card-num">02</div>
+        <div class="card-name">CIVILISED CHAOS</div>
+        <div class="card-collection-label">SECOND COLLECTION</div>
+        <div class="card-desc">
+          <p>We don't need permission.</p>
+          <p>We need chaos.</p>
+          <p>The system was never</p>
+          <p>built for us.</p>
+        </div>
+      </div>
+
+      <div class="card-stats-col">
+        <div class="stat-row">
+          <span class="stat-key">STATUS</span>
+          <span class="stat-val" style="color:var(--text-dim);">ARCHIVED</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">RELEASE DATE</span>
+          <span class="stat-val">05.24.25</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">PIECES</span>
+          <span class="stat-val">08</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">SIGNAL ID</span>
+          <span class="stat-val">CC-002</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">TRANSMISSION</span>
+          <span class="stat-val">COMPLETE</span>
+        </div>
+      </div>
+
+      <div class="card-right-col">
+        <div class="card-status-badge archived">ARCHIVED</div>
+        <div class="card-skull-preview">
+          <div class="skull-crosshair"></div>
+          <img src="skull2.png" alt="skull preview"
+            style="filter:drop-shadow(0 0 6px rgba(196,84,134,0.5));"
+            onerror="this.style.display='none';">
+        </div>
+        <button class="view-archive-btn">
+          VIEW ARCHIVE
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 03: DEAD INTERNET (LOCKED) ═══ -->
+    <div class="archive-card locked">
+      <span class="card-corner tl"></span>
+      <span class="card-corner tr"></span>
+      <span class="card-corner bl"></span>
+      <span class="card-corner br"></span>
+
+      <div class="card-img-col" style="background:#0a0a0a;">
+        <div class="card-img-placeholder" style="display:flex;position:relative;overflow:hidden;">
+          <img src="skull2.png" alt="Dead Internet Skull"
+            style="width:330px;height:330px;object-fit:contain;opacity:0.45;filter:hue-rotate(160deg) saturate(2) brightness(0.7) drop-shadow(0 0 12px rgba(0,255,255,0.5));">
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(196,84,134,0.03) 3px,rgba(196,84,134,0.03) 4px);animation:scanShift 2s linear infinite;"></div>
+        </div>
+      </div>
+
+      <div class="card-info-col">
+        <div class="card-num">03</div>
+        <div class="card-name" style="color:var(--text-dim);">DEAD INTERNET</div>
+        <div class="card-collection-label">THIRD COLLECTION</div>
+        <div class="card-desc">
+          <p>The feed died.</p>
+          <p>What remains is rot,</p>
+          <p>static and silence.</p>
+        </div>
+      </div>
+
+      <div class="card-stats-col">
+        <div class="stat-row">
+          <span class="stat-key">STATUS</span>
+          <span class="stat-val locked-val" style="display:flex;align-items:center;gap:5px;">
+            LOCKED
+            <svg class="stat-lock-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">RELEASE DATE</span>
+          <span class="stat-val locked-val">--:--:--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">PIECES</span>
+          <span class="stat-val locked-val">--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">SIGNAL ID</span>
+          <span class="stat-val">DI-003</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">TRANSMISSION</span>
+          <span class="stat-val locked-val">UNKNOWN</span>
+        </div>
+      </div>
+
+      <div class="card-right-col">
+        <div class="card-status-badge locked-badge">LOCKED</div>
+        <div class="card-skull-preview" style="opacity:0.35;">
+          <svg viewBox="0 0 80 90" xmlns="http://www.w3.org/2000/svg" style="width:60px;height:60px;stroke:#666;fill:none;stroke-width:1.2;">
+            <rect x="12" y="40" width="56" height="42" rx="4"/>
+            <path d="M22 40V28a18 18 0 0 1 36 0v12"/>
+            <circle cx="40" cy="60" r="6"/>
+            <rect x="37" y="60" width="6" height="10" rx="1"/>
+            <line x1="0" y1="45" x2="12" y2="45" stroke-opacity="0.4"/>
+            <line x1="68" y1="45" x2="80" y2="45" stroke-opacity="0.4"/>
+            <line x1="40" y1="0" x2="40" y2="12" stroke-opacity="0.4"/>
+          </svg>
+        </div>
+        <span class="locked-text">LOCKED</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-left">
+    <span>DK-2050</span>
+    <span style="color:var(--border-mid);">+</span>
+    <div class="footer-barcode" id="footerBarcode"></div>
+    <span>UNKNOWN SIGNAL</span>
+  </div>
+  <div class="footer-center">DEAD INSIDE. ALIVE ANYWAY.</div>
+  <div class="footer-right">
+    <span>© DEADKIND 2050</span>
+    <span>ALL RIGHTS REBELLED.</span>
+  </div>
+</footer>
+
+<style>
+@media (min-width:769px){
+  .nav-menu-btn{display:none!important;}
+}
+</style>
+
+<script>
+function buildBarcode(el) {
+  if (!el) return;
+  [2,1,3,1,2,4,1,2,1,3,2,1,2,3,1,4,1,2,3,1,2].forEach(w => {
+    const s = document.createElement('span');
+    s.style.cssText = `display:inline-block;width:${w}px;height:100%;background:var(--text);`;
+    el.appendChild(s);
+  });
+}
+buildBarcode(document.getElementById('navBarcode'));
+buildBarcode(document.getElementById('footerBarcode'));
+
+// Show hamburger on mobile, hide desktop links
+function handleResize() {
+  const isMobile = window.innerWidth <= 768;
+  const menuBtn = document.getElementById('menuBtn');
+  const desktopLinks = document.getElementById('desktopLinks');
+  if (menuBtn) menuBtn.style.display = isMobile ? 'flex' : 'none';
+  if (desktopLinks) desktopLinks.style.display = isMobile ? 'none' : 'flex';
+}
+handleResize();
+window.addEventListener('resize', handleResize);
+
+// Hamburger toggle
+const menuBtn = document.getElementById('menuBtn');
+const navDrawer = document.getElementById('navDrawer');
+if (menuBtn && navDrawer) {
+  menuBtn.addEventListener('click', () => {
+    navDrawer.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!menuBtn.contains(e.target) && !navDrawer.contains(e.target)) {
+      navDrawer.classList.remove('open');
+    }
+  });
+}
+</script>
+</body>
+</html>
